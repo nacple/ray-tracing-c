@@ -13,6 +13,9 @@
 #define COLOR_WHITE 0xFFFFFF
 #define COLOR_RED 0xFF0000
 
+//#define slope_count 13
+//const double slopes[slope_count] = {-2, -1, 0, 1, 2, .5, 8, -8, -.5, .25, -.25, -3, 3};
+
 struct Circle {
     double x;
     double y;
@@ -32,12 +35,24 @@ void drawCircle(SDL_Surface* surface, struct Circle circle, uint32_t color){
     }
 }
 
-uint8_t checkColliding(struct Circle circle1, struct Circle circle2) {
+uint8_t checkCircleColliding(struct Circle circle1, struct Circle circle2) {
     double radius_sum_squared = (circle1.radius + circle2.radius) * (circle1.radius + circle2.radius);
     double dist_squared = ((circle1.x - circle2.x) * (circle1.x - circle2.x)) + ((circle1.y - circle2.y) * (circle1.y - circle2.y));
     if(dist_squared <= radius_sum_squared)
         return 1;
     return 0;
+}
+
+uint8_t checkColliding(struct Circle circle1, double x, double y) {
+    double radius_squared = (circle1.radius * circle1.radius);
+    double dist_squared = ((circle1.x - x) * (circle1.x - x)) + ((circle1.y - y) * (circle1.y - y));
+    if(dist_squared <= radius_squared)
+        return 1;
+    return 0;
+}
+
+double f(double x, double m, int circlex, int circley) {
+    return m * (circlex-x) + circley;
 }
 
 int main(int argc, char* argv[]) {
@@ -74,7 +89,24 @@ int main(int argc, char* argv[]) {
         }
         SDL_FillRect(surface, &blank_screen, BACKGROUND_COLOR);
 
-        if(checkColliding(circle, static_circle)) {
+        for(double m = -10; m < 10; m+=.5) {
+        //for(int m_index = 0; m_index < slope_count; m_index++) {
+            //double m = slopes[m_index];
+            for(double x = circle.x; x < WIDTH; x+=.1) {
+                double y = f(x, m, circle.x, circle.y);
+                SDL_Rect rect = {x, y, 1, 1};
+                if(checkColliding(static_circle, x, y)) break;
+                SDL_FillRect(surface, &rect, COLOR_WHITE);
+            }
+            for(double x = circle.x; x > 0; x-=.1) {
+                double y = f(x, m, circle.x, circle.y);
+                SDL_Rect rect = {x, y, 1, 1};
+                if(checkColliding(static_circle, x, y)) break;
+                SDL_FillRect(surface, &rect, COLOR_WHITE);
+            }  
+        }
+
+        if(checkCircleColliding(circle, static_circle)) {
             drawCircle(surface, circle, COLOR_RED);
             drawCircle(surface, static_circle, COLOR_RED);
         } else {
