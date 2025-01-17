@@ -11,6 +11,7 @@
 
 #define BACKGROUND_COLOR 0x000000
 #define COLOR_WHITE 0xFFFFFF
+#define COLOR_RED 0xFF0000
 
 struct Circle {
     double x;
@@ -29,6 +30,14 @@ void drawCircle(SDL_Surface* surface, struct Circle circle, uint32_t color){
             }
         }
     }
+}
+
+uint8_t checkColliding(struct Circle circle1, struct Circle circle2) {
+    double radius_sum_squared = (circle1.radius + circle2.radius) * (circle1.radius + circle2.radius);
+    double dist_squared = ((circle1.x - circle2.x) * (circle1.x - circle2.x)) + ((circle1.y - circle2.y) * (circle1.y - circle2.y));
+    if(dist_squared <= radius_sum_squared)
+        return 1;
+    return 0;
 }
 
 int main(int argc, char* argv[]) {
@@ -50,6 +59,7 @@ int main(int argc, char* argv[]) {
     SDL_Rect blank_screen = {0, 0, WIDTH, HEIGHT};
     
     struct Circle circle = {400, 300, 50};
+    struct Circle static_circle = {600, 200, 150};
 
     SDL_Event event;
     int running = 1;
@@ -63,7 +73,14 @@ int main(int argc, char* argv[]) {
             }
         }
         SDL_FillRect(surface, &blank_screen, BACKGROUND_COLOR);
-        drawCircle(surface, circle, COLOR_WHITE);
+
+        if(checkColliding(circle, static_circle)) {
+            drawCircle(surface, circle, COLOR_RED);
+            drawCircle(surface, static_circle, COLOR_RED);
+        } else {
+            drawCircle(surface, circle, COLOR_WHITE);
+            drawCircle(surface, static_circle, COLOR_WHITE);
+        }
 
         SDL_UpdateWindowSurface(window);
         SDL_Delay(delay);
