@@ -6,9 +6,11 @@
 
 #define WIDTH 800
 #define HEIGHT 600
-#define COLOR_WHITE 0xFFFFFF
-#define fps 2
+#define fps 30
 #define delay 1000 / fps
+
+#define BACKGROUND_COLOR 0x000000
+#define COLOR_WHITE 0xFFFFFF
 
 struct Circle {
     double x;
@@ -45,8 +47,9 @@ int main(int argc, char* argv[]) {
     }
 
     SDL_Surface* surface = SDL_GetWindowSurface(window);
+    SDL_Rect blank_screen = {0, 0, WIDTH, HEIGHT};
     
-    struct Circle circle = {400, 300, 200};
+    struct Circle circle = {400, 300, 50};
 
     SDL_Event event;
     int running = 1;
@@ -54,11 +57,14 @@ int main(int argc, char* argv[]) {
         while (SDL_PollEvent(&event)) {
             if (event.type == SDL_QUIT) {
                 running = 0;
+            } else if (event.type == SDL_MOUSEMOTION && event.motion.state) {
+                circle.x = event.motion.x;
+                circle.y = event.motion.y;
             }
         }
-
-        circle.x += 1;
+        SDL_FillRect(surface, &blank_screen, BACKGROUND_COLOR);
         drawCircle(surface, circle, COLOR_WHITE);
+
         SDL_UpdateWindowSurface(window);
         SDL_Delay(delay);
     }
