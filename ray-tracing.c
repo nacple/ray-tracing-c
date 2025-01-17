@@ -7,6 +7,25 @@
 #define HEIGHT 600
 #define COLOR_WHITE 0xFFFFFF
 
+struct Circle {
+    double x;
+    double y;
+    double radius;
+};
+
+void drawCircle(SDL_Surface* surface, struct Circle circle){
+    double radius_squared = circle.radius * circle.radius;
+    for(double x = circle.x - circle.radius; x <= circle.x + circle.radius; x++){
+        for(double y = circle.y - circle.radius; y <= circle.y + circle.radius; y++){
+            double dist_squared = ((x - circle.x) * (x - circle.x)) + ((y - circle.y) * (y - circle.y));
+            if(dist_squared <= radius_squared){
+                SDL_Rect rect = {x, y, 1, 1};
+                SDL_FillRect(surface, &rect, COLOR_WHITE);
+            }
+        }
+    }
+}
+
 int main(int argc, char* argv[]) {
     // Initialize SDL
     if (SDL_Init(SDL_INIT_VIDEO) < 0) {
@@ -23,10 +42,9 @@ int main(int argc, char* argv[]) {
     }
 
     SDL_Surface* surface = SDL_GetWindowSurface(window);
-
-    SDL_Rect rect = {200, 200, 200, 200};
-    SDL_FillRect(surface, &rect, COLOR_WHITE);
     
+    struct Circle circle = {400, 300, 200};
+    drawCircle(surface, circle);
     SDL_UpdateWindowSurface(window);
 
     SDL_Event event;
