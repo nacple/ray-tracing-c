@@ -3,6 +3,8 @@
 #include <SDL2/SDL.h>
 #include <stdio.h>
 #include <stdint.h>
+#include <math.h>
+#include <stdlib.h>
 
 #define WIDTH 800
 #define HEIGHT 600
@@ -13,8 +15,9 @@
 #define COLOR_WHITE 0xFFFFFF
 #define COLOR_RED 0xFF0000
 
-//#define slope_count 13
-//const double slopes[slope_count] = {-2, -1, 0, 1, 2, .5, 8, -8, -.5, .25, -.25, -3, 3};
+
+double* calculated_slopes;
+uint16_t slope_count = 0;
 
 struct Circle {
     double x;
@@ -55,7 +58,29 @@ double f(double x, double m, int circlex, int circley) {
     return m * (circlex-x) + circley;
 }
 
+void calculateSlopes(int value) {
+    slope_count = 360 / value;
+    calculated_slopes = (double*) malloc(slope_count * sizeof(double));
+    printf("Degree: %d\nRay count: %u\n\n", value, (unsigned int)slope_count);
+    for(uint16_t i = 0; i < slope_count; i++){
+        calculated_slopes[i] = tan(i * value * M_PI / 180);
+    }
+}
+
 int main(int argc, char* argv[]) {
+
+    int value = 15;
+    if (argc == 2) {
+        if (atoi(argv[1]) <= 0) {
+            printf("Invalid angle.");
+            return -1;
+        } else {
+            value = atoi(argv[1]);
+        }
+    }
+
+    calculateSlopes(value);
+
     // Initialize SDL
     if (SDL_Init(SDL_INIT_VIDEO) < 0) {
         printf("SDL could not initialize: %s\n", SDL_GetError());
@@ -82,6 +107,7 @@ int main(int argc, char* argv[]) {
         while (SDL_PollEvent(&event)) {
             if (event.type == SDL_QUIT) {
                 running = 0;
+                free(calculated_slopes);
             } else if (event.type == SDL_MOUSEMOTION && event.motion.state) {
                 circle.x = event.motion.x;
                 circle.y = event.motion.y;
@@ -89,21 +115,21 @@ int main(int argc, char* argv[]) {
         }
         SDL_FillRect(surface, &blank_screen, BACKGROUND_COLOR);
 
-        for(double m = -10; m < 10; m+=.5) {
-        //for(int m_index = 0; m_index < slope_count; m_index++) {
-            //double m = slopes[m_index];
+
+        for(uint16_t i = 0; i < slope_count; i++) {
+            double angle = calculated_slopes[i];
             for(double x = circle.x; x < WIDTH; x+=.1) {
-                double y = f(x, m, circle.x, circle.y);
+                double y = f(x, angle, circle.x, circle.y);
                 SDL_Rect rect = {x, y, 1, 1};
                 if(checkColliding(static_circle, x, y)) break;
                 SDL_FillRect(surface, &rect, COLOR_WHITE);
             }
             for(double x = circle.x; x > 0; x-=.1) {
-                double y = f(x, m, circle.x, circle.y);
-                SDL_Rect rect = {x, y, 1, 1};
-                if(checkColliding(static_circle, x, y)) break;
+                double y = f(x, angle, circle.x, circle.y);
+                SDL_Rect rect = (SDL_Rect) {x, y, 1, 1};
+                if(checkColliding(static_circle, x, y) || (y > HEIGHT)) break;
                 SDL_FillRect(surface, &rect, COLOR_WHITE);
-            }  
+            }
         }
 
         if(checkCircleColliding(circle, static_circle)) {
