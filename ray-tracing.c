@@ -11,11 +11,6 @@
 #define fps 30
 #define delay 1000 / fps
 
-#define BACKGROUND_COLOR 0x000000
-#define COLOR_WHITE 0xFFFFFF
-#define COLOR_RED 0xFF0000
-
-
 double* calculated_slopes;
 uint16_t slope_count = 0;
 
@@ -25,14 +20,14 @@ struct Circle {
     double radius;
 };
 
-void drawCircle(SDL_Surface* surface, struct Circle circle, uint32_t color){
+void drawCircle(SDL_Renderer* renderer, struct Circle circle){
     double radius_squared = circle.radius * circle.radius;
     for(double x = circle.x - circle.radius; x <= circle.x + circle.radius; x++){
         for(double y = circle.y - circle.radius; y <= circle.y + circle.radius; y++){
             double dist_squared = ((x - circle.x) * (x - circle.x)) + ((y - circle.y) * (y - circle.y));
             if(dist_squared <= radius_squared){
                 SDL_Rect rect = {x, y, 1, 1};
-                SDL_FillRect(surface, &rect, color);
+                SDL_RenderFillRect(renderer, &rect);
             }
         }
     }
@@ -95,7 +90,7 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    SDL_Surface* surface = SDL_GetWindowSurface(window);
+    SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
     SDL_Rect blank_screen = {0, 0, WIDTH, HEIGHT};
     
     struct Circle circle = {400, 300, 50};
@@ -113,37 +108,40 @@ int main(int argc, char* argv[]) {
                 circle.y = event.motion.y;
             }
         }
-        SDL_FillRect(surface, &blank_screen, BACKGROUND_COLOR);
+        SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+        SDL_RenderClear(renderer);
 
-
+        SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
         for(uint16_t i = 0; i < slope_count; i++) {
             double angle = calculated_slopes[i];
             for(double x = circle.x; x < WIDTH; x+=.1) {
                 double y = f(x, angle, circle.x, circle.y);
                 SDL_Rect rect = {x, y, 1, 1};
                 if(checkColliding(static_circle, x, y)) break;
-                SDL_FillRect(surface, &rect, COLOR_WHITE);
+                SDL_RenderFillRect(renderer, &rect);
             }
             for(double x = circle.x; x > 0; x-=.1) {
                 double y = f(x, angle, circle.x, circle.y);
                 SDL_Rect rect = (SDL_Rect) {x, y, 1, 1};
                 if(checkColliding(static_circle, x, y) || (y > HEIGHT)) break;
-                SDL_FillRect(surface, &rect, COLOR_WHITE);
+                SDL_RenderFillRect(renderer, &rect);
             }
         }
 
         if(checkCircleColliding(circle, static_circle)) {
-            drawCircle(surface, circle, COLOR_RED);
-            drawCircle(surface, static_circle, COLOR_RED);
+            SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
+            drawCircle(renderer, circle);
+            drawCircle(renderer, static_circle);
         } else {
-            drawCircle(surface, circle, COLOR_WHITE);
-            drawCircle(surface, static_circle, COLOR_WHITE);
+            drawCircle(renderer, circle);
+            drawCircle(renderer, static_circle);
         }
 
-        SDL_UpdateWindowSurface(window);
-        SDL_Delay(delay);
+        SDL_RenderPresent(renderer);
+        //SDL_Delay(delay);
     }
 
+    SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
     SDL_Quit();
 
