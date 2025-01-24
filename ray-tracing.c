@@ -8,7 +8,7 @@
 
 #define WIDTH 800
 #define HEIGHT 600
-#define fps 30
+#define fps 60
 #define delay 1000 / fps
 
 double* calculated_slopes;
@@ -26,8 +26,7 @@ void drawCircle(SDL_Renderer* renderer, struct Circle circle){
         for(double y = circle.y - circle.radius; y <= circle.y + circle.radius; y++){
             double dist_squared = ((x - circle.x) * (x - circle.x)) + ((y - circle.y) * (y - circle.y));
             if(dist_squared <= radius_squared){
-                SDL_Rect rect = {x, y, 1, 1};
-                SDL_RenderFillRect(renderer, &rect);
+                SDL_RenderDrawPointF(renderer, x, y);
             }
         }
     }
@@ -76,13 +75,11 @@ int main(int argc, char* argv[]) {
 
     calculateSlopes(value);
 
-    // Initialize SDL
     if (SDL_Init(SDL_INIT_VIDEO) < 0) {
         printf("SDL could not initialize: %s\n", SDL_GetError());
         return 1;
     }
 
-    // Create the window
     SDL_Window* window = SDL_CreateWindow("Ray tracing", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WIDTH, HEIGHT, 0);
     if (window == NULL) {
         printf("Window could not be created: %s\n", SDL_GetError());
@@ -91,7 +88,6 @@ int main(int argc, char* argv[]) {
     }
 
     SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
-    SDL_Rect blank_screen = {0, 0, WIDTH, HEIGHT};
     
     struct Circle circle = {400, 300, 50};
     struct Circle static_circle = {600, 200, 150};
@@ -114,18 +110,22 @@ int main(int argc, char* argv[]) {
         SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
         for(uint16_t i = 0; i < slope_count; i++) {
             double angle = calculated_slopes[i];
+            double temp_x = circle.x;
+            double temp_y = circle.y;
             for(double x = circle.x; x < WIDTH; x+=.1) {
                 double y = f(x, angle, circle.x, circle.y);
-                SDL_Rect rect = {x, y, 1, 1};
                 if(checkColliding(static_circle, x, y)) break;
-                SDL_RenderFillRect(renderer, &rect);
+                temp_x = x;
+                temp_y = y;
             }
+            SDL_RenderDrawLineF(renderer, circle.x, circle.y, temp_x, temp_y);
             for(double x = circle.x; x > 0; x-=.1) {
                 double y = f(x, angle, circle.x, circle.y);
-                SDL_Rect rect = (SDL_Rect) {x, y, 1, 1};
-                if(checkColliding(static_circle, x, y) || (y > HEIGHT)) break;
-                SDL_RenderFillRect(renderer, &rect);
+                if(checkColliding(static_circle, x, y)) break;
+                temp_x = x;
+                temp_y = y;
             }
+            SDL_RenderDrawLineF(renderer, circle.x, circle.y, temp_x, temp_y);
         }
 
         if(checkCircleColliding(circle, static_circle)) {
